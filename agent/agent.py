@@ -1,10 +1,16 @@
-from models import model
-from tools import calculate_right_refund, get_today_date
-from tools import issue_refund_ticket, get_user_purchase_history
+try:
+    from agent.models import model
+    from agent.tools import calculate_right_refund, get_today_date, issue_refund_ticket, get_user_purchase_history
+    from agent.prompts import agent_system_prompt
+    from agent.objects import Answer
+except ModuleNotFoundError:
+    from models import model
+    from tools import calculate_right_refund, get_today_date
+    from tools import issue_refund_ticket, get_user_purchase_history
+    from prompts import agent_system_prompt
+    from objects import Answer
 from dotenv import load_dotenv
 from langchain.agents import create_agent
-from prompts import agent_system_prompt
-from objects import Answer
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.messages import HumanMessage
 from uuid import uuid4
@@ -30,19 +36,23 @@ def run_conversation():
     conversation = True
 
     while conversation:
+        response = agent.invoke({"messages": [question]}, config=config)
+        structured_response = response.get("structured_response")
 
-        response = agent.invoke({"messages": question}, config=config)
-        print(response)
-        structured_response = response["structured_response"]
-
-        print(structured_response.answer)
-
-        conversation = structured_response.conversation
+        if structured_response:
+            print(structured_response.answer)
+            conversation = structured_response.conversation
+        else:
+            if "messages" in response and response["messages"]:
+                print(response["messages"][-1].content)
+            conversation = False
 
         if conversation:
-            user_input = input("reply: \n")
+            user_input = input("reply (or 'exit' to quit): \n").strip()
+            if user_input.lower() in ("exit", "quit", ""):
+                break
             question = HumanMessage(content=user_input)
 
     print("the job is done!")
-
-run_conversation()
+if __name__ == "__main__":
+    run_conversation()

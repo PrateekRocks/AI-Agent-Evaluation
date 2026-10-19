@@ -1,9 +1,14 @@
-from langchain.tools import tool
-from data import users_data
-from dotenv import load_dotenv
 import logging
-from objects import PurchaseItem
+from dotenv import load_dotenv
 from datetime import date
+from langchain.tools import tool
+
+try:
+    from agent.data import users_data
+    from agent.objects import PurchaseItem
+except ModuleNotFoundError:
+    from data import users_data
+    from objects import PurchaseItem
 
 load_dotenv()
 
